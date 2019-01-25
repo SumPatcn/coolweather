@@ -50,4 +50,5 @@ public class Province {
     public void setProvinceCode(int provinceCode) {
         this.provinceCode = provinceCode;
     }
+
 }

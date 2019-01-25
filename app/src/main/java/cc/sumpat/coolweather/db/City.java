@@ -7,7 +7,7 @@ import org.greenrobot.greendao.annotation.Generated;
 
 @Entity
 public class City {
-    @Id(autoincrement = true)
+    @Id
     private long id;
 
     @Property
