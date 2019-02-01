@@ -8,8 +8,8 @@ import org.greenrobot.greendao.annotation.Generated;
 @Entity
 public class County {
 
-    @Id
-    private long id;
+    @Property
+    private int id;
 
     @Property
     private String countyName;
@@ -20,8 +20,8 @@ public class County {
     @Property
     private int cityId;
 
-    @Generated(hash = 790900523)
-    public County(long id, String countyName, String weatherId, int cityId) {
+    @Generated(hash = 2021791012)
+    public County(int id, String countyName, String weatherId, int cityId) {
         this.id = id;
         this.countyName = countyName;
         this.weatherId = weatherId;
@@ -32,11 +32,11 @@ public class County {
     public County() {
     }
 
-    public long getId() {
+    public int getId() {
         return this.id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -63,5 +63,6 @@ public class County {
     public void setCityId(int cityId) {
         this.cityId = cityId;
     }
+
 
 }
