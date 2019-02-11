@@ -2,6 +2,8 @@ package cc.sumpat.coolweather.util;
 
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,6 +15,7 @@ import cc.sumpat.coolweather.db.CountyDao;
 import cc.sumpat.coolweather.db.DaoSession;
 import cc.sumpat.coolweather.db.Province;
 import cc.sumpat.coolweather.db.ProvinceDao;
+import cc.sumpat.coolweather.gson.Weather;
 
 public class Utility {
     private static DaoSession mDaoSession;
@@ -83,5 +86,17 @@ public class Utility {
             }
         }
         return false;
+    }
+
+    public static Weather handleWeatherResponse(String response){
+        try {
+            JSONObject jsonObject=new JSONObject(response);
+            JSONArray jsonArray=jsonObject.getJSONArray("Heweather6");
+            String weatherContent=jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(weatherContent,Weather.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
