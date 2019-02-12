@@ -1,13 +1,17 @@
 package cc.sumpat.coolweather.gson;
 
+import java.util.List;
+
 public class Weather {
     public String status;
 
     public Basic basic;
 
+    public Update update;
+
     public Now now;
 
-    public LifeStyle lifeStyle;
+    public List<LifeStyle> lifeStyleList;
 
-    public DailyForecast dailyForecast;
+    public List<DailyForecast> dailyForecastList;
 }

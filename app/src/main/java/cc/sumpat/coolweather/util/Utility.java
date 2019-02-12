@@ -15,6 +15,7 @@ import cc.sumpat.coolweather.db.CountyDao;
 import cc.sumpat.coolweather.db.DaoSession;
 import cc.sumpat.coolweather.db.Province;
 import cc.sumpat.coolweather.db.ProvinceDao;
+import cc.sumpat.coolweather.gson.Aqi;
 import cc.sumpat.coolweather.gson.Weather;
 
 public class Utility {
@@ -88,12 +89,24 @@ public class Utility {
         return false;
     }
 
-    public static Weather handleWeatherResponse(String response){
+    public static Weather handleWeatherResponse(String response) {
         try {
-            JSONObject jsonObject=new JSONObject(response);
-            JSONArray jsonArray=jsonObject.getJSONArray("Heweather6");
-            String weatherContent=jsonArray.getJSONObject(0).toString();
-            return new Gson().fromJson(weatherContent,Weather.class);
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("Heweather6");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(weatherContent, Weather.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Aqi handleAqiResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+            String aqiContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(aqiContent, Aqi.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
