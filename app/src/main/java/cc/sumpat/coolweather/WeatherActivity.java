@@ -1,6 +1,8 @@
 package cc.sumpat.coolweather;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -8,10 +10,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
 
 import java.io.IOException;
 
@@ -25,6 +30,8 @@ import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
     private String TAG = "WeatherActivity";
+
+    private ImageView bingPicImg;
 
     private ScrollView weatherLayout;
 
@@ -51,7 +58,14 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT>=21){
+            View decorView=getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    |View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
         setContentView(R.layout.activity_weather);
+        bingPicImg = findViewById(R.id.bing_pic_img);
         weatherLayout = findViewById(R.id.weather_layout);
         titleCity = findViewById(R.id.title_city);
         titleUpdateTime = findViewById(R.id.title_update_time);
@@ -65,23 +79,28 @@ public class WeatherActivity extends AppCompatActivity {
         sportText = findViewById(R.id.sport_text);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(
                 this);
-        SharedPreferences aqipreferences = PreferenceManager.getDefaultSharedPreferences(
-                this);
         String weatherString = preferences.getString("weather", null);
-        String aqiString = aqipreferences.getString("aqi", null);
-        Log.d(TAG, "onCreate: " + weatherString);
-        Log.d(TAG, "onCreate: " + aqiString);
+        String aqiString = preferences.getString("aqi", null);
+        String bingPic = preferences.getString("bing_pic", null);
+        if (bingPic != null) {
+            Glide.with(this).load(bingPic).into(bingPicImg);
+        } else {
+            loadBingPic();
+        }
         if (weatherString != null || aqiString != null) {
+            Log.d(TAG, "onCreate: 有缓存数据运行");
             Weather weather = Utility.handleWeatherResponse(weatherString);
             Aqi aqi = Utility.handleAqiResponse(aqiString);
             showWeatherInfo(weather);
             showAqiInfo(aqi);
         } else {
+            Log.d(TAG, "onCreate: 无缓存数据运行");
             String weatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
             requestAqi(weatherId);
         }
+
     }
 
     public void requestWeather(final String weatherId) {
@@ -94,7 +113,7 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(WeatherActivity.this, "服务器获取信息失败2",
+                        Toast.makeText(WeatherActivity.this, "服务器获取常规天气信息失败",
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -108,7 +127,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         if (weather != null && "ok".equals(weather.getStatus())) {
-                            Log.d(TAG, "成功获取天气数据" + responseText);
+                            Log.d(TAG, "成功获取常规天气数据");
                             SharedPreferences.Editor editor = PreferenceManager.
                                     getDefaultSharedPreferences(WeatherActivity.this)
                                     .edit();
@@ -116,7 +135,7 @@ public class WeatherActivity extends AppCompatActivity {
                             editor.apply();
                             showWeatherInfo(weather);
                         } else {
-                            Toast.makeText(WeatherActivity.this, "服务器获取信息失败",
+                            Toast.makeText(WeatherActivity.this, "服务器返回信息异常",
                                     Toast.LENGTH_SHORT).show();
                             Log.d(TAG, responseText);
                         }
@@ -124,6 +143,7 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
         });
+        loadBingPic();
     }
 
     public void requestAqi(final String weatherId) {
@@ -141,8 +161,8 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(WeatherActivity.this, "服务器获取信息失败2",
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(WeatherActivity.this,
+                                "服务器获取空气质量信息失败", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -163,7 +183,7 @@ public class WeatherActivity extends AppCompatActivity {
                             editor.apply();
                             showAqiInfo(aqi);
                         } else {
-                            Toast.makeText(WeatherActivity.this, "服务器获取信息失败",
+                            Toast.makeText(WeatherActivity.this, "服务器返回信息异常",
                                     Toast.LENGTH_SHORT).show();
                             Log.d(TAG, responseText);
                         }
@@ -188,7 +208,6 @@ public class WeatherActivity extends AppCompatActivity {
                 String comf = "comf";
                 String cw = "cw";
                 String sportT = "sport";
-                Log.d(TAG, "showWeatherInfo: " + lifeStyle.getType() + lifeStyle.getTxt());
                 if (comf.equals(lifeStyle.getType())) {
                     String comfort = "舒适度：" + lifeStyle.getTxt();
                     comfortText.setText(comfort);
@@ -220,25 +239,44 @@ public class WeatherActivity extends AppCompatActivity {
                 forecastLayout.addView(view);
             }
         } else {
-            Log.d(TAG, "showWeatherInfo: 获取未来几天天气列表数据失败");
+            Toast.makeText(this, "获取预报列表数据失败", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "showWeatherInfo: 获取预报列表数据失败");
         }
         weatherLayout.setVisibility(View.VISIBLE);
     }
 
     private void showAqiInfo(Aqi aqi) {
         if (aqi != null) {
-            Log.d(TAG, "showAqiInfo: " + aqi.getAir_now_city().getAqi() + " " +
-                    aqi.getAir_now_city().getPm25());
-            /*View view = LayoutInflater.from(this).inflate(R.layout.aqi,
-                    aqiLayout, false);
-            TextView aqiText = view.findViewById(R.id.aqi_text);
-            TextView pm25Text = view.findViewById(R.id.pm25_text);*/
             aqiText.setText(aqi.getAir_now_city().getAqi());
             pm25Text.setText(aqi.getAir_now_city().getPm25());
-            Log.d(TAG, "showAqiInfo: " + aqiText.getText() + " " + pm25Text.getText());
         } else {
             Toast.makeText(this, "获取空气质量信息失败", Toast.LENGTH_SHORT).show();
             Log.d(TAG, "showAqiInfo: 获取空气质量信息失败");
         }
+    }
+
+    private void loadBingPic() {
+        String requestBingPic = "http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingPic = response.body().string();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(
+                        WeatherActivity.this).edit();
+                editor.putString("bing_pic",bingPic);
+                editor.apply();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPic).into(bingPicImg);
+                    }
+                });
+            }
+        });
     }
 }

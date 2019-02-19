@@ -6,6 +6,8 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
+import java.util.prefs.Preferences;
+
 import cc.sumpat.coolweather.gson.Weather;
 
 public class MainActivity extends AppCompatActivity {
@@ -15,9 +17,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences aqiPreferences = PreferenceManager.getDefaultSharedPreferences(
-                this);
-        if (preferences.getString("weather", null) != null || aqiPreferences.
+        if (preferences.getString("weather", null) != null || preferences.
                 getString("aqi", null) != null) {
             Intent intent = new Intent(this, WeatherActivity.class);
             startActivity(intent);
