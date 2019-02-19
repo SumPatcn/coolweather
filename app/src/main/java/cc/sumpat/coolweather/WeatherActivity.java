@@ -16,10 +16,7 @@ import android.widget.Toast;
 import java.io.IOException;
 
 import cc.sumpat.coolweather.gson.Aqi;
-import cc.sumpat.coolweather.gson.DailyForecast;
-import cc.sumpat.coolweather.gson.LifeStyle;
 import cc.sumpat.coolweather.gson.Weather;
-import cc.sumpat.coolweather.gson.Aqi;
 import cc.sumpat.coolweather.util.HttpUtil;
 import cc.sumpat.coolweather.util.Utility;
 import okhttp3.Call;
@@ -41,7 +38,9 @@ public class WeatherActivity extends AppCompatActivity {
 
     private LinearLayout forecastLayout;
 
-    private LinearLayout aqiLayout;
+    private TextView aqiText;
+
+    private TextView pm25Text;
 
     private TextView comfortText;
 
@@ -59,17 +58,24 @@ public class WeatherActivity extends AppCompatActivity {
         degreeText = findViewById(R.id.degree_text);
         weatherInfoText = findViewById(R.id.weather_info_text);
         forecastLayout = findViewById(R.id.forecast_layout);
-        aqiLayout =findViewById(R.id.aqi_layout);
+        aqiText = findViewById(R.id.aqi_text);
+        pm25Text = findViewById(R.id.pm25_text);
         comfortText = findViewById(R.id.comf_text);
         carWashText = findViewById(R.id.cw_text);
         sportText = findViewById(R.id.sport_text);
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences
-                (this);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(
+                this);
+        SharedPreferences aqipreferences = PreferenceManager.getDefaultSharedPreferences(
+                this);
         String weatherString = preferences.getString("weather", null);
+        String aqiString = aqipreferences.getString("aqi", null);
         Log.d(TAG, "onCreate: " + weatherString);
-        if (weatherString != null) {
+        Log.d(TAG, "onCreate: " + aqiString);
+        if (weatherString != null || aqiString != null) {
             Weather weather = Utility.handleWeatherResponse(weatherString);
+            Aqi aqi = Utility.handleAqiResponse(aqiString);
             showWeatherInfo(weather);
+            showAqiInfo(aqi);
         } else {
             String weatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
@@ -101,7 +107,7 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (weather != null && "ok".equals(weather.status)) {
+                        if (weather != null && "ok".equals(weather.getStatus())) {
                             Log.d(TAG, "成功获取天气数据" + responseText);
                             SharedPreferences.Editor editor = PreferenceManager.
                                     getDefaultSharedPreferences(WeatherActivity.this)
@@ -155,6 +161,7 @@ public class WeatherActivity extends AppCompatActivity {
                                     .edit();
                             editor.putString("aqi", responseText);
                             editor.apply();
+                            showAqiInfo(aqi);
                         } else {
                             Toast.makeText(WeatherActivity.this, "服务器获取信息失败",
                                     Toast.LENGTH_SHORT).show();
@@ -167,41 +174,39 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     private void showWeatherInfo(Weather weather) {
-        String cityName = weather.basic.getLocation();
-        String updateTime = weather.update.getLoc().split(" ")[1];
-        String degree = weather.now.getTmp() + "℃";
-        String weatherInfo = weather.now.getCond_txt();
+        String cityName = weather.getBasic().getLocation();
+        String updateTime = weather.getUpdate().getLoc().split(" ")[1];
+        String degree = weather.getNow().getTmp() + " ℃";
+        String weatherInfo = weather.getNow().getCond_txt();
         titleCity.setText(cityName);
         titleUpdateTime.setText(updateTime);
         degreeText.setText(degree);
         weatherInfoText.setText(weatherInfo);
         forecastLayout.removeAllViews();
-        if (weather.lifeStyleList != null && weather.lifeStyleList.size() > 0) {
-            for (LifeStyle lifeStyle : weather.lifeStyleList) {
-                if (lifeStyle.getType().equals("comf")) {
+        if (weather.getLifestyle() != null && weather.getLifestyle().size() > 0) {
+            for (Weather.LifestyleBean lifeStyle : weather.getLifestyle()) {
+                String comf = "comf";
+                String cw = "cw";
+                String sportT = "sport";
+                Log.d(TAG, "showWeatherInfo: " + lifeStyle.getType() + lifeStyle.getTxt());
+                if (comf.equals(lifeStyle.getType())) {
                     String comfort = "舒适度：" + lifeStyle.getTxt();
                     comfortText.setText(comfort);
-                } else {
-                    comfortText.setText("获取指数信息失败");
                 }
-                if (lifeStyle.getType().equals("cw")) {
+                if (cw.equals(lifeStyle.getType())) {
                     String carWash = "洗车指数：" + lifeStyle.getTxt();
                     carWashText.setText(carWash);
-                } else {
-                    carWashText.setText("获取指数信息失败");
                 }
-                if (lifeStyle.getType().equals("sport")) {
+                if (sportT.equals(lifeStyle.getType())) {
                     String sport = "运动指数：" + lifeStyle.getTxt();
                     sportText.setText(sport);
-                } else {
-                    sportText.setText("获取指数信息失败");
                 }
             }
         } else {
             Log.d(TAG, "showWeatherInfo: 获取指数列表数据失败");
         }
-        if (weather.dailyForecastList != null && weather.dailyForecastList.size() > 0) {
-            for (DailyForecast dailyForecast : weather.dailyForecastList) {
+        if (weather.getDaily_forecast() != null && weather.getDaily_forecast().size() > 0) {
+            for (Weather.DailyForecastBean dailyForecast : weather.getDaily_forecast()) {
                 View view = LayoutInflater.from(this).inflate(R.layout.forecast_item,
                         forecastLayout, false);
                 TextView dateText = view.findViewById(R.id.date_text);
@@ -222,14 +227,18 @@ public class WeatherActivity extends AppCompatActivity {
 
     private void showAqiInfo(Aqi aqi) {
         if (aqi != null) {
-            View view=LayoutInflater.from(this).inflate(R.layout.aqi,
-                    aqiLayout,false);
-            TextView aqiText=view.findViewById(R.id.aqi_text);
-            TextView pm25Text=view.findViewById(R.id.pm25_text);
+            Log.d(TAG, "showAqiInfo: " + aqi.getAir_now_city().getAqi() + " " +
+                    aqi.getAir_now_city().getPm25());
+            /*View view = LayoutInflater.from(this).inflate(R.layout.aqi,
+                    aqiLayout, false);
+            TextView aqiText = view.findViewById(R.id.aqi_text);
+            TextView pm25Text = view.findViewById(R.id.pm25_text);*/
             aqiText.setText(aqi.getAir_now_city().getAqi());
             pm25Text.setText(aqi.getAir_now_city().getPm25());
+            Log.d(TAG, "showAqiInfo: " + aqiText.getText() + " " + pm25Text.getText());
         } else {
             Toast.makeText(this, "获取空气质量信息失败", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "showAqiInfo: 获取空气质量信息失败");
         }
     }
 }
