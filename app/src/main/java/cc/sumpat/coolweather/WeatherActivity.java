@@ -1,5 +1,6 @@
 package cc.sumpat.coolweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -26,6 +27,7 @@ import java.io.IOException;
 
 import cc.sumpat.coolweather.gson.Aqi;
 import cc.sumpat.coolweather.gson.Weather;
+import cc.sumpat.coolweather.service.AutoUpdateService;
 import cc.sumpat.coolweather.util.HttpUtil;
 import cc.sumpat.coolweather.util.Utility;
 import okhttp3.Call;
@@ -77,10 +79,10 @@ public class WeatherActivity extends AppCompatActivity {
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
         setContentView(R.layout.activity_weather);
-        drawerLayout=findViewById(R.id.drawer_layout);
+        drawerLayout = findViewById(R.id.drawer_layout);
         bingPicImg = findViewById(R.id.bing_pic_img);
         weatherLayout = findViewById(R.id.weather_layout);
-        navButton=findViewById(R.id.nav_button);
+        navButton = findViewById(R.id.nav_button);
         titleCity = findViewById(R.id.title_city);
         titleUpdateTime = findViewById(R.id.title_update_time);
         degreeText = findViewById(R.id.degree_text);
@@ -91,7 +93,7 @@ public class WeatherActivity extends AppCompatActivity {
         comfortText = findViewById(R.id.comf_text);
         carWashText = findViewById(R.id.cw_text);
         sportText = findViewById(R.id.sport_text);
-        swipeRefresh=findViewById(R.id.swipe_refresh);
+        swipeRefresh = findViewById(R.id.swipe_refresh);
         swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(
                 this);
@@ -107,7 +109,7 @@ public class WeatherActivity extends AppCompatActivity {
             Log.d(TAG, "onCreate: 有缓存数据运行");
             Weather weather = Utility.handleWeatherResponse(weatherString);
             Aqi aqi = Utility.handleAqiResponse(aqiString);
-            mWeatherId=weather.getBasic().getCid();
+            mWeatherId = weather.getBasic().getCid();
             showWeatherInfo(weather);
             showAqiInfo(aqi);
         } else {
@@ -163,12 +165,12 @@ public class WeatherActivity extends AppCompatActivity {
                                     .edit();
                             editor.putString("weather", responseText);
                             editor.apply();
-                            mWeatherId=weather.getBasic().getCid();
+                            mWeatherId = weather.getBasic().getCid();
                             showWeatherInfo(weather);
                         } else {
-                            Toast.makeText(WeatherActivity.this, "服务器返回信息异常",
-                                    Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, responseText);
+                            Toast.makeText(WeatherActivity.this,
+                                    "服务器返回天气信息异常", Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, "服务器返回天气信息异常 " + responseText);
                         }
                         swipeRefresh.setRefreshing(false);
                     }
@@ -215,9 +217,9 @@ public class WeatherActivity extends AppCompatActivity {
                             editor.apply();
                             showAqiInfo(aqi);
                         } else {
-                            Toast.makeText(WeatherActivity.this, "服务器返回信息异常",
-                                    Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, responseText);
+                            Toast.makeText(WeatherActivity.this,
+                                    "服务器返回空气质量信息异常", Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, "服务器返回空气质量信息异常 " + responseText);
                         }
                     }
                 });
@@ -275,6 +277,8 @@ public class WeatherActivity extends AppCompatActivity {
             Log.d(TAG, "showWeatherInfo: 获取预报列表数据失败");
         }
         weatherLayout.setVisibility(View.VISIBLE);
+        Intent intent=new Intent(this,AutoUpdateService.class);
+        startActivity(intent);
     }
 
     private void showAqiInfo(Aqi aqi) {
