@@ -51,7 +51,7 @@ public class AutoUpdateService extends Service {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = preferences.getString("weather", null);
         String aqiString = preferences.getString("aqi", null);
-        if (weatherString != null || aqiString != null) {
+        if (weatherString != null && aqiString != null) {
             Weather weather = Utility.handleWeatherResponse(weatherString);
             String weatherId = weather.getBasic().getCid();
             String weatherUrl = "https://free-api.heweather.net/s6/weather?location=" + weatherId +
@@ -95,7 +95,7 @@ public class AutoUpdateService extends Service {
                     String responseText = response.body().string();
                     Aqi aqi1 = Utility.handleAqiResponse(responseText);
                     if (aqi1 != null && "ok".equals(aqi1.getStatus())) {
-                        Log.d(TAG, "成功获取空气质量信息" + responseText);
+                        Log.d(TAG, "成功获取空气质量信息");
                         SharedPreferences.Editor editor = PreferenceManager.
                                 getDefaultSharedPreferences(AutoUpdateService.this)
                                 .edit();

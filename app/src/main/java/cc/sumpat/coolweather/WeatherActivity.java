@@ -105,15 +105,15 @@ public class WeatherActivity extends AppCompatActivity {
         } else {
             loadBingPic();
         }
-        if (weatherString != null || aqiString != null) {
-            Log.d(TAG, "onCreate: 有缓存数据运行");
+        if (weatherString != null && aqiString != null) {
+            Log.d(TAG, "onCreate: 有缓存数据运行 "+aqiString);
             Weather weather = Utility.handleWeatherResponse(weatherString);
             Aqi aqi = Utility.handleAqiResponse(aqiString);
             mWeatherId = weather.getBasic().getCid();
             showWeatherInfo(weather);
             showAqiInfo(aqi);
         } else {
-            Log.d(TAG, "onCreate: 无缓存数据运行");
+            Log.d(TAG, "onCreate: 无缓存数据运行 "+getIntent().getStringExtra("weather_id"));
             mWeatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(mWeatherId);
@@ -182,9 +182,12 @@ public class WeatherActivity extends AppCompatActivity {
 
     public void requestAqi(final String weatherId) {
         StringBuilder temp = new StringBuilder(weatherId);
-        temp.deleteCharAt(temp.length() - 1);
-        temp.deleteCharAt(temp.length() - 1);
-        temp.append("01");
+        Log.d(TAG, "requestAqi: "+temp);
+        if (!weatherId.endsWith("00")){
+            temp.deleteCharAt(temp.length() - 1);
+            temp.deleteCharAt(temp.length() - 1);
+            temp.append("01");
+        }
 
         String aqiUrl = "https://free-api.heweather.net/s6/air/now?location=" + temp.toString() +
                 "&key=2e34dcfa8cf2445c966410994b69f060";
@@ -209,7 +212,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         if (aqi != null && "ok".equals(aqi.getStatus())) {
-                            Log.d(TAG, "成功获取空气质量信息" + responseText);
+                            Log.d(TAG, "成功获取空气质量信息");
                             SharedPreferences.Editor editor = PreferenceManager.
                                     getDefaultSharedPreferences(WeatherActivity.this)
                                     .edit();
@@ -278,7 +281,7 @@ public class WeatherActivity extends AppCompatActivity {
         }
         weatherLayout.setVisibility(View.VISIBLE);
         Intent intent=new Intent(this,AutoUpdateService.class);
-        startActivity(intent);
+        startService(intent);
     }
 
     private void showAqiInfo(Aqi aqi) {
